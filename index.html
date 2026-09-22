@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Personal Task Board - スマートフォン向けTODO管理サイト" />
+    <title>Personal Task Board</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand-block" aria-label="サイト名">
+          <div class="brand-mark" aria-hidden="true">✓</div>
+          <div>
+            <p class="eyebrow">Personal Task Board</p>
+            <h1>Personal Task Board</h1>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <span id="todayDate" class="date-chip" aria-live="polite"></span>
+          <button id="themeToggleButton" class="header-button" type="button" aria-label="テーマを切り替える">
+            <span class="button-text">テーマ</span>
+          </button>
+          <button id="settingsButton" class="header-button" type="button" aria-label="設定を開く">
+            <span class="button-text">設定</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section class="dashboard" aria-label="TODOの状況">
+          <button class="stat-card" type="button" data-stat="pending" aria-label="未完了のTODOを表示">
+            <span class="stat-label">未完了</span>
+            <strong id="pendingCount" class="stat-value">0</strong>
+          </button>
+
+          <button class="stat-card" type="button" data-stat="today" aria-label="今日が期限のTODOを表示">
+            <span class="stat-label">今日が期限</span>
+            <strong id="todayCount" class="stat-value">0</strong>
+          </button>
+
+          <button class="stat-card" type="button" data-stat="overdue" aria-label="期限切れのTODOを表示">
+            <span class="stat-label">期限切れ</span>
+            <strong id="overdueCount" class="stat-value">0</strong>
+          </button>
+
+          <button class="stat-card" type="button" data-stat="completed" aria-label="完了済みのTODOを表示">
+            <span class="stat-label">完了済み</span>
+            <strong id="completedCount" class="stat-value">0</strong>
+          </button>
+
+          <div class="stat-card stat-card-wide" aria-label="完了率">
+            <div class="stat-header-row">
+              <span class="stat-label">完了率</span>
+              <strong id="completionRateValue" class="stat-value">0%</strong>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <div id="completionProgress" class="progress-bar"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="toolbar" aria-label="検索と絞り込み">
+          <label class="search-field" for="searchInput">
+            <span class="field-label">検索</span>
+            <input id="searchInput" type="search" placeholder="タイトル・詳細・カテゴリを検索" autocomplete="off" />
+          </label>
+
+          <div class="filter-block">
+            <div class="filter-group">
+              <span class="field-label">状態</span>
+              <div id="statusFilters" class="chip-list" aria-label="状態で絞り込む"></div>
+            </div>
+
+            <div class="filter-group">
+              <span class="field-label">優先度</span>
+              <div id="priorityFilters" class="chip-list" aria-label="優先度で絞り込む"></div>
+            </div>
+
+            <div class="filter-group">
+              <span class="field-label">カテゴリ</span>
+              <div id="categoryFilters" class="chip-list" aria-label="カテゴリで絞り込む"></div>
+            </div>
+          </div>
+
+          <div class="sort-row">
+            <label class="select-field" for="sortSelect">
+              <span class="field-label">並び替え</span>
+              <select id="sortSelect" aria-label="並び替え条件を選択">
+                <option value="created-desc">作成日時が新しい順</option>
+                <option value="created-asc">作成日時が古い順</option>
+                <option value="due-asc">期限が近い順</option>
+                <option value="priority-desc">優先度順</option>
+                <option value="title-asc">タイトル順</option>
+              </select>
+            </label>
+
+            <button id="resetFiltersButton" class="secondary-button" type="button">条件をリセット</button>
+          </div>
+
+          <div id="activeFilters" class="active-filters" aria-live="polite"></div>
+        </section>
+
+        <section class="list-section" aria-label="TODO一覧">
+          <div id="todoList" class="todo-list" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+
+    <button id="addTodoButton" class="fab" type="button" aria-label="新しいTODOを追加">
+      <span aria-hidden="true">＋</span>
+    </button>
+
+    <div id="todoDialog" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal="todoDialog"></div>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="todoDialogTitle">
+        <div class="modal-header">
+          <h2 id="todoDialogTitle">新規TODO</h2>
+          <button class="close-button" type="button" data-close-modal="todoDialog" aria-label="ダイアログを閉じる">×</button>
+        </div>
+
+        <form id="todoForm" novalidate>
+          <div class="field-group">
+            <label for="todoTitle">タイトル</label>
+            <input id="todoTitle" name="title" type="text" maxlength="100" required />
+            <div class="helper-row">
+              <span class="field-hint">必須</span>
+              <span id="titleCounter" class="field-counter">0 / 100</span>
+            </div>
+            <p id="titleError" class="field-error" aria-live="assertive"></p>
+          </div>
+
+          <div class="field-group">
+            <label for="todoDescription">詳細</label>
+            <textarea id="todoDescription" name="description" maxlength="1000" rows="4" placeholder="作業内容やメモを入力"></textarea>
+            <div class="helper-row">
+              <span class="field-hint">任意</span>
+              <span id="descriptionCounter" class="field-counter">0 / 1000</span>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="todoDueDate">期限</label>
+            <input id="todoDueDate" name="dueDate" type="date" />
+          </div>
+
+          <div class="field-row two-col">
+            <div class="field-group">
+              <label for="todoPriority">優先度</label>
+              <select id="todoPriority" name="priority">
+                <option value="high">高</option>
+                <option value="medium" selected>中</option>
+                <option value="low">低</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label for="todoCategory">カテゴリ</label>
+              <input id="todoCategory" name="category" type="text" maxlength="30" list="categorySuggestions" placeholder="カテゴリを入力" />
+              <datalist id="categorySuggestions"></datalist>
+            </div>
+          </div>
+
+          <div id="todoError" class="form-error" aria-live="assertive"></div>
+
+          <div class="dialog-actions">
+            <button id="deleteTodoFromDialogButton" class="danger-button hidden" type="button">削除</button>
+            <div class="action-spacer"></div>
+            <button class="secondary-button" type="button" data-close-modal="todoDialog">キャンセル</button>
+            <button id="saveTodoButton" class="primary-button" type="submit">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="settingsDialog" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal="settingsDialog"></div>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="settingsDialogTitle">
+        <div class="modal-header">
+          <h2 id="settingsDialogTitle">設定</h2>
+          <button class="close-button" type="button" data-close-modal="settingsDialog" aria-label="設定を閉じる">×</button>
+        </div>
+
+        <div class="settings-content">
+          <section class="settings-section">
+            <h3>テーマ</h3>
+            <div class="radio-list">
+              <label class="radio-item">
+                <input type="radio" name="themeOption" value="system" />
+                <span>端末設定に合わせる</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="themeOption" value="light" />
+                <span>ライト</span>
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="themeOption" value="dark" />
+                <span>ダーク</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-section">
+            <h3>データ管理</h3>
+            <div class="stacked-buttons">
+              <button id="addSampleDataButton" class="secondary-button" type="button">サンプルデータを追加</button>
+              <button id="backupButton" class="secondary-button" type="button">JSONバックアップ</button>
+              <button id="restoreButton" class="secondary-button" type="button">JSON復元</button>
+              <button id="deleteCompletedButton" class="secondary-button" type="button">完了済みTODOを一括削除</button>
+              <button id="deleteAllButton" class="danger-button" type="button">全TODOデータを削除</button>
+            </div>
+            <input id="importFileInput" type="file" accept="application/json,.json" class="sr-only" />
+          </section>
+
+          <section class="settings-section site-info">
+            <h3>サイト情報</h3>
+            <ul>
+              <li><strong>サイト名:</strong> Personal Task Board</li>
+              <li><strong>バージョン:</strong> 1.0.0</li>
+              <li>データはブラウザー内に保存されます。</li>
+              <li>端末間やブラウザー間で自動同期されません。</li>
+              <li>ブラウザーのデータ削除やサイトデータ消去でTODOが失われる可能性があります。</li>
+              <li>機密情報や顧客情報の登録には適していません。</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div id="confirmDialog" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal="confirmDialog"></div>
+      <div class="modal-panel panel-small" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <div class="modal-header">
+          <h2 id="confirmTitle">確認</h2>
+          <button class="close-button" type="button" data-close-modal="confirmDialog" aria-label="確認ダイアログを閉じる">×</button>
+        </div>
+
+        <p id="confirmMessage" class="confirm-message"></p>
+
+        <div class="dialog-actions confirm-actions">
+          <button id="confirmSecondaryButton" class="secondary-button hidden" type="button">追加</button>
+          <button id="confirmCancelButton" class="secondary-button" type="button">キャンセル</button>
+          <button id="confirmPrimaryButton" class="danger-button" type="button">削除</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>
